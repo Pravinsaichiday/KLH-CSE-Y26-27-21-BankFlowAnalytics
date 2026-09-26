@@ -1,72 +1,172 @@
 # BankFlow Analytics
 
-An end-to-end, fully synthetic real-time banking transaction data pipeline
-and explainable anomaly-monitoring platform.
+**Course Code:** 24DEA3101 — FDE Team 21
+**Team:** B Raghu Nandan (2420030058) · C Pravin Sai (2420030777) · J Hemanth (2420039805)
+**Faculty Guide:** Dr. N. Shirisha, Associate Professor
 
+BankFlow Analytics is a real-time banking transaction analytics and anomaly monitoring
+pipeline. It ingests, validates, enriches, and analyzes synthetic transaction data
+end-to-end, and presents the results as a queryable business-intelligence warehouse.
+
+All data used in this project is synthetically generated — no real customer or banking
+data is used anywhere in this repository.
+
+---
+
+## Project Overview
+
+Digital banking platforms generate a continuous stream of transaction data through
+activities such as online payments, money transfers, ATM withdrawals, deposits, and
+bill payments. This project builds a pipeline that captures and processes such
+transaction data in real time, organizing it through a Medallion Architecture, and
+flags unusual activity using an explainable, rule-based anomaly detection engine.
+
+The pipeline includes fault-tolerant data handling, a dedicated quarantine layer for
+invalid records, and automated batch orchestration for loading a Gold-layer data
+warehouse, which is finally visualized through Power BI dashboards.
+
+---
+
+## Pipeline Flow\
+Transaction Generator (Python)
+↓
+Apache Kafka
+↓
+PySpark Structured Streaming
+↓
+Validation & Quarantine
+↓
+Bronze Delta Layer → Silver Delta Layer
+↓
+Apache Airflow (Batch Orchestration)
+↓
+SQLite Gold Layer (Star Schema)
+↓
+Power BI Dashboard
+
+---
+
+## Repository Structure
+BankFlowAnalytics/
+│
+├── src/
+│ └── Project source code — generator, Kafka producer/topics, Spark streaming
+│ (validation, quarantine, transformations, anomaly detection), Gold-layer loaders
+│
+├── data/
+│ └── Populated Gold SQLite database and sample layer output (Bronze/Silver/Quarantine)
+│
+├── docs/
+│ └── Project specification, system architecture diagram and notebook, Power BI guide
+│
+├── reports/
+│ └── Review presentations (Project Review 1, 2, 3)
+│
+├── results/
+│ └── Screenshots evidencing the pipeline running end-to-end
+│
+├── config/
+│ └── Pipeline configuration — app, Kafka, anomaly thresholds, schema
+│
+├── scripts/
+│ └── CLI runbooks — create topics, run generator, run streaming, reset data
+│
+├── sql/
+│ └── Gold layer DDL — dimension tables, fact table, KPI metrics, validation queries
+│
+├── airflow/
+│ └── DAG for Silver → Gold batch orchestration
+│
+├── docker/
+│ └── docker-compose.yml for Kafka and Airflow
+│
+├── tests/
+│ └── Unit and integration test suites
+│
+└── README.md
+
+
+> Dataset files and configuration containing sensitive information are excluded from
+> version control via `.gitignore`.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Data Generation | Python, Faker |
+| Ingestion | Apache Kafka |
+| Stream Processing | PySpark Structured Streaming |
+| Storage | Delta Lake (Bronze, Silver, Quarantine) |
+| Orchestration | Apache Airflow |
+| Data Warehouse | SQLite (Star Schema) |
+| Visualization | Power BI |
+| Containerization | Docker, Docker Compose |
+
+---
+
+## Getting Started
+
+Clone the repository:
+
+```bash
+git clone https://github.com/Pravinsaichiday/KLH-CSE-Y26-27-21-BankFlowAnalytics.git
+cd KLH-CSE-Y26-27-21-BankFlowAnalytics
 ```
-Python Generator -> Kafka -> PySpark Structured Streaming -> Delta Lake
-(Bronze + Silver + Quarantine) -> Airflow -> SQLite (Gold Star Schema) -> Power BI
-```
 
-**All data is synthetic.** No real customer or banking data or PII is used
-anywhere in this project. `is_anomaly` / `anomaly_score` represent
-statistically/rule-based *unusual activity flagged for investigation* —
-never a confirmed-fraud determination.
-
-## Quick start
+Set up the environment:
 
 ```bash
 cp .env.example .env
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt --break-system-packages   # or omit the flag in a venv
-
-# 1. Bring up Kafka + Airflow
-cd docker && docker compose up -d && cd ..
-
-# 2. Create topics
-python scripts/create_topics.py
-
-# 3. Start the streaming job (long-running; run in its own terminal/pane)
-python scripts/run_streaming.py
-
-# 4. Start generating synthetic traffic
-python scripts/run_generator.py --rate 10 --anomaly-ratio 0.1 --duration 600
-
-# 5. Airflow will pick up bankflow_gold_pipeline every 15 minutes, or trigger manually:
-docker compose -f docker/docker-compose.yml exec airflow-webserver \
-    airflow dags trigger bankflow_gold_pipeline
-
-# 6. Connect Power BI per dashboards/powerbi/README_POWERBI.md
+pip install -r requirements.txt
 ```
 
-## Repository layout
-
-See `BankFlow_Analytics_Project_Specification.md` for the full spec this
-repo implements. Key entry points:
-
-- `src/generator/` — synthetic data + anomaly-pattern injection
-- `src/kafka/` — topic management + idempotent producer
-- `src/streaming/` — Structured Streaming: validation, quarantine,
-  transformations, anomaly scoring, Bronze/Silver writers
-- `src/gold/` — Silver -> Gold star-schema + KPI loaders (SQLite)
-- `airflow/dags/bankflow_gold_pipeline.py` — batch orchestration only
-- `scripts/` — CLI runbooks (`create_topics`, `run_generator`,
-  `run_streaming`, `reset_data`)
-- `dashboards/powerbi/README_POWERBI.md` — connection guide + DAX + layouts
-- `tests/unit`, `tests/integration` — pytest suites
-
-## Running tests
+Run the pipeline (containerized):
 
 ```bash
-pytest tests/unit                 # no external services required
-pytest tests/integration          # needs a temp SQLite (auto) + Kafka for the Kafka suite
+# 1. Start Kafka
+cd docker && docker compose -p bankflow up -d kafka kafka-ui && cd ..
+
+# 2. Build the runtime image
+docker build -t bankflow-runtime -f Dockerfile.runtime .
+
+# 3. Create Kafka topics
+docker run --rm --network bankflow_default -v "$(pwd):/app" -w /app \
+  -e KAFKA_BOOTSTRAP_SERVERS=kafka:9092 bankflow-runtime python scripts/create_topics.py
+
+# 4. Start the streaming job
+docker run -d --name bankflow-streaming --network bankflow_default -v "$(pwd):/app" -w /app \
+  -e KAFKA_BOOTSTRAP_SERVERS=kafka:9092 bankflow-runtime python scripts/run_streaming.py
+
+# 5. Generate synthetic transactions
+docker run --rm --network bankflow_default -v "$(pwd):/app" -w /app \
+  -e KAFKA_BOOTSTRAP_SERVERS=kafka:9092 bankflow-runtime \
+  python scripts/run_generator.py --rate 10 --anomaly-ratio 0.1 --duration 60
+
+# 6. Load Silver → Gold
+docker run --rm --network bankflow_default -v "$(pwd):/app" -w /app \
+  bankflow-runtime python -m src.gold.sqlite_loader
 ```
 
-## Important operational note
+Browse the Gold database:
 
-`src/kafka/` is a local package with the same import name as the
-`kafka-python-ng` dependency it depends on (`import kafka`). Always run
-commands from the **repository root** (not from inside `src/`) so Python's
-import resolution finds the installed third-party `kafka` package rather
-than shadowing it with the local `src/kafka` package. All scripts in
-`scripts/` already insert the repo root at the front of `sys.path` for you.
+```bash
+docker run --rm -p 8001:8001 -v "$(pwd)/data:/data" -w /data python:3.11-slim bash -c \
+  "pip install -q datasette && datasette bankflow_gold.db --host 0.0.0.0 --port 8001"
+```
+
+Run the tests:
+
+```bash
+pytest tests/unit
+pytest tests/integration
+```
+
+---
+
+## Documentation
+
+- [`docs/`](./docs) — full technical specification, architecture diagram and notebook, Power BI dashboard guide
+- [`reports/`](./reports) — project review presentations
+- [`results/`](./results) — pipeline execution evidence
