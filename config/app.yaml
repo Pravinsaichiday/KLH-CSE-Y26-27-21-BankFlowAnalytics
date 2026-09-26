@@ -1,0 +1,37 @@
+# ---------------------------------------------------------------------------
+# BankFlow Analytics - Application configuration
+# ---------------------------------------------------------------------------
+
+app:
+  name: "BankFlow Analytics"
+  environment: "local"
+  log_level: "INFO"
+
+spark:
+  app_name: "BankFlowStreaming"
+  master: "local[*]"
+  shuffle_partitions: 8
+  trigger_interval: "10 seconds"
+  watermark_duration: "10 minutes"
+
+storage:
+  bronze_path: "./data/bronze/transactions"
+  silver_path: "./data/silver/transactions"
+  quarantine_path: "./data/quarantine/transactions"
+  checkpoint_base_path: "./data/checkpoints"
+  gold_sqlite_path: "./data/gold/bankflow_gold.db"
+
+checkpoints:
+  bronze: "./data/checkpoints/bronze"
+  silver: "./data/checkpoints/silver"
+  quarantine: "./data/checkpoints/quarantine"
+
+gold:
+  batch_lookback_hours: 26
+  kpi_refresh_on_load: true
+
+generator:
+  rate_per_second: 5
+  anomaly_ratio: 0.08
+  duration_seconds: 0
+  seed: 42

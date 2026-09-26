@@ -1,0 +1,42 @@
+# ---------------------------------------------------------------------------
+# BankFlow Analytics - Anomaly detection configuration
+#
+# NOTE: An "anomaly" here means statistically/rule-based unusual activity
+# that warrants investigation. It is explicitly NOT a confirmed fraud
+# determination.
+# ---------------------------------------------------------------------------
+
+anomaly:
+  thresholds:
+    high_amount_multiplier: 3.0        # amount > multiplier * account rolling mean
+    burst_window_minutes: 5
+    burst_transaction_limit: 8         # more than N txns in window -> burst flag
+    repeated_failures_limit: 3         # more than N failures in window -> failure burst flag
+    unusual_hour_start: 0              # 00:00
+    unusual_hour_end: 5                # 05:00 (inclusive start, exclusive end)
+    location_jump_minutes: 10          # two different cities within N minutes -> location jump
+    new_device_lookback_days: 30
+
+  scoring_weights:
+    high_amount: 2
+    burst: 2
+    repeated_failures: 2
+    location_jump: 2
+    new_device: 1
+    unusual_hour: 1
+
+  score_bands:
+    normal:
+      min: 0
+      max: 2
+      label: "NORMAL"
+    watch:
+      min: 3
+      max: 4
+      label: "WATCH"
+    anomaly:
+      min: 5
+      max: 999
+      label: "ANOMALY"
+
+  is_anomaly_score_threshold: 5

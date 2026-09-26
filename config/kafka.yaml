@@ -1,0 +1,37 @@
+# ---------------------------------------------------------------------------
+# BankFlow Analytics - Kafka configuration
+# ---------------------------------------------------------------------------
+
+kafka:
+  bootstrap_servers: "localhost:9092"
+  client_id: "bankflow-producer"
+
+  topics:
+    transactions:
+      name: "bank_transactions"
+      partitions: 3
+      replication_factor: 1
+    quarantine:
+      name: "bank_transactions_quarantine"
+      partitions: 3
+      replication_factor: 1
+    anomaly:
+      name: "bank_transactions_anomaly"
+      partitions: 3
+      replication_factor: 1
+
+  producer:
+    acks: "all"
+    enable_idempotence: true
+    retries: 10
+    linger_ms: 20
+    batch_size: 32768
+    compression_type: "gzip"
+    max_in_flight_requests_per_connection: 5
+    request_timeout_ms: 30000
+
+  consumer:
+    group_id: "bankflow-streaming-consumer"
+    auto_offset_reset: "earliest"
+    enable_auto_commit: false
+    max_poll_records: 500

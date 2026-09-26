@@ -1,0 +1,76 @@
+# ---------------------------------------------------------------------------
+# BankFlow Analytics - Canonical schema & domain values
+# Single source of truth used by generator, validation, and streaming.
+# ---------------------------------------------------------------------------
+
+schema:
+  required_fields:
+    - transaction_id
+    - account_id
+    - transaction_type
+    - amount
+    - timestamp
+    - status
+
+  transaction_types:
+    - TRANSFER
+    - UPI_PAYMENT
+    - CARD_PAYMENT
+    - ATM_WITHDRAWAL
+    - DEPOSIT
+    - BILL_PAYMENT
+    - REFUND
+
+  channels:
+    - MOBILE
+    - WEB
+    - ATM
+    - POS
+    - BRANCH
+    - UPI
+
+  statuses:
+    - SUCCESS
+    - FAILED
+    - PENDING
+    - REVERSED
+
+  merchant_categories:
+    - GROCERY
+    - FUEL
+    - UTILITIES
+    - ECOMMERCE
+    - ENTERTAINMENT
+    - HEALTHCARE
+    - EDUCATION
+    - TRAVEL
+    - DINING
+    - FINANCIAL_SERVICES
+    - GOVERNMENT
+    - OTHER
+
+  cities:
+    - Mumbai
+    - Delhi
+    - Bengaluru
+    - Hyderabad
+    - Chennai
+    - Kolkata
+    - Pune
+    - Ahmedabad
+    - Jaipur
+    - Lucknow
+
+  currency: "INR"
+
+  account_types:
+    - SAVINGS
+    - CURRENT
+    - SALARY
+    - NRI
+
+  customer_segments:
+    - RETAIL_MASS
+    - RETAIL_AFFLUENT
+    - SME
+    - CORPORATE
