@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+get-pip.py
+Miniforge3-MacOSX-arm64.sh
+.env
+data/checkpoints/
